@@ -34,12 +34,22 @@ ENTRY_POINTS = {'pymontecarlo.program':
                 ['penepma = pymontecarlo_penepma.program:PenepmaProgram'],
 
                 'pymontecarlo.formats.hdf5':
-                ['PenepmaProgramHDF5Handler = pymontecarlo_penepma.formats.hdf5.program:PenepmaProgramHDF5Handler']}
+                ['PenepmaProgramHDF5Handler = pymontecarlo_penepma.formats.hdf5.program:PenepmaProgramHDF5Handler',
+
+                 'PenepmaMaterialHDF5Handler = pymontecarlo_penepma.formats.hdf5.options.material:PenepmaMaterialHDF5Handler',
+                 ],
+
+                'pymontecarlo.formats.series':
+                ['PenepmaMaterialSeriesHandler = pymontecarlo_penepma.formats.series.options.material:PenepmaMaterialSeriesHandler', ],
+
+                'pymontecarlo.formats.html':
+                ['PenepmaMaterialHtmlHandler = pymontecarlo_penepma.formats.html.options.material:PenepmaMaterialHtmlHandler', ],
+                 }
 
 setup(name="pyMonteCarlo-PENEPMA",
       version=versioneer.get_version(),
       url='https://github.com/pymontecarlo',
-      description="Python interface for Monte Carlo simulation program PENEPMA",
+      description="Interface of Monte Carlo simulation program PENEPMA with pyMonteCarlo",
       author="Hendrix Demers and Philippe T. Pinard",
       author_email="hendrix.demers@mail.mcgill.ca and philippe.pinard@gmail.com",
       license="GPL v3",
