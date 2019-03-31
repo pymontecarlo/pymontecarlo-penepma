@@ -18,38 +18,30 @@ with open(os.path.join(BASEDIR, 'README.rst'), 'r') as fp:
 PACKAGES = find_packages()
 PACKAGE_DATA = {}
 
-#casinodir = os.path.join(BASEDIR, 'pymontecarlo_casino2', 'casino2')
-#for root, _dirnames, filenames in os.walk(casinodir):
-#    dirpath = os.path.join('casino2', root[len(casinodir) + 1:])
-#    for filename in filenames:
-#        relpath = os.path.join(dirpath, filename)
-#        PACKAGE_DATA['pymontecarlo_casino2'].append(relpath)
+penepmadir = os.path.join(BASEDIR, 'pymontecarlo_penepma', 'penepma')
+for root, _dirnames, filenames in os.walk(penepmadir):
+    dirpath = os.path.join('penepma', root[len(penepmadir) + 1:])
+    for filename in filenames:
+        relpath = os.path.join(dirpath, filename)
+        PACKAGE_DATA.setdefault('pymontecarlo_penepma', []).append(relpath)
 
-INSTALL_REQUIRES = ['pymontecarlo', 'pypenelopetools']
-EXTRAS_REQUIRE = {'develop': ['nose', 'coverage']}
+with open(os.path.join(BASEDIR, 'requirements.txt'), 'r') as fp:
+    INSTALL_REQUIRES = fp.read().splitlines()
+
+EXTRAS_REQUIRE = {}
+with open(os.path.join(BASEDIR, 'requirements_dev.txt'), 'r') as fp:
+    EXTRAS_REQUIRE['develop'] = fp.read().splitlines()
 
 CMDCLASS = versioneer.get_cmdclass()
 
-ENTRY_POINTS = {'pymontecarlo.program':
-                ['penepma = pymontecarlo_penepma.program:PenepmaProgram'],
-
-                'pymontecarlo.formats.hdf5':
-                ['PenepmaProgramHDF5Handler = pymontecarlo_penepma.formats.hdf5.program:PenepmaProgramHDF5Handler',
-
-                 'PenepmaMaterialHDF5Handler = pymontecarlo_penepma.formats.hdf5.options.material:PenepmaMaterialHDF5Handler',
-                 ],
-
-                'pymontecarlo.formats.series':
-                ['PenepmaMaterialSeriesHandler = pymontecarlo_penepma.formats.series.options.material:PenepmaMaterialSeriesHandler', ],
-
-                'pymontecarlo.formats.html':
-                ['PenepmaMaterialHtmlHandler = pymontecarlo_penepma.formats.html.options.material:PenepmaMaterialHtmlHandler', ],
-                 }
+ENTRY_POINTS = {}
 
 setup(name="pyMonteCarlo-PENEPMA",
       version=versioneer.get_version(),
       url='https://github.com/pymontecarlo',
       description="Interface of Monte Carlo simulation program PENEPMA with pyMonteCarlo",
+      long_description=LONG_DESCRIPTION,
+      long_description_content_type='text/x-rst',
       author="Hendrix Demers and Philippe T. Pinard",
       author_email="hendrix.demers@mail.mcgill.ca and philippe.pinard@gmail.com",
       license="GPL v3",
