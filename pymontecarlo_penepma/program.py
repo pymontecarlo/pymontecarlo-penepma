@@ -33,18 +33,18 @@ class PenepmaProgram(ProgramBase):
                  number_trajectories=1e38):
         """
         Program for PENEPMA simulation program.
-        
+
         Args:
-            simulation_parameters (SimulationParameters): 
-                Simulation parameters that will be applied to all materials. 
-                By default, the simulation parameters are adjusted to the 
+            simulation_parameters (SimulationParameters):
+                Simulation parameters that will be applied to all materials.
+                By default, the simulation parameters are adjusted to the
                 simulation (see :class:`LazySimulationParameters`).
             interaction_forcings (InteractionForcings):
                 Defines the interaction forcings that will be applied to all
                 bodies of the geometry. By default, the interaction forcings
                 are adjusted to the simulation (see :class:`LazyInteractionForcings`).
             reference_line (ReferenceLine):
-                Termination condition based on the relative uncertainty on 
+                Termination condition based on the relative uncertainty on
                 a certain X-ray line. By default, the reference line is defined
                 as the lowest X-ray line for the simulation with a relative
                 uncertainty of 5% (see :class:`LazyReferenceLine`). If
@@ -120,13 +120,17 @@ class PenepmaProgram(ProgramBase):
             raise ProgramNotFound('Cannot find {}. Installation might be corrupted.'
                                .format(filepath))
 
+        if os.path.getsize(filepath) < 500000: # < 500kb
+            raise ProgramNotFound('{} is not the right file. Maybe Git LFS was not run.'
+                                  .format(filepath))
+
         return filepath
 
     @property
     def executable(self):
         """
         Returns the path to the PENEPMA executable.
-        
+
         Raises
             ProgramNotFound: if the executable cannot be found
         """
@@ -136,7 +140,7 @@ class PenepmaProgram(ProgramBase):
     def material_executable(self):
         """
         Returns the path to the material executable.
-        
+
         Raises
             ProgramNotFound: if the executable cannot be found
         """
@@ -146,7 +150,7 @@ class PenepmaProgram(ProgramBase):
     def pendbase_directory(self):
         """
         Returns the path to the pendbase directory.
-        
+
         Raises
             ProgramNotFound: if the directory cannot be found
         """
