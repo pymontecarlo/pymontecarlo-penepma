@@ -125,7 +125,7 @@ class PenepmaExporter(ExporterBase):
         for penmaterial in geometry.get_materials():
             if penmaterial is PENELOPE_VACUUM:
                 continue
-            coro = self._write_material(penmaterial, options, dirpath, erracc)
+            coro = self._write_material(penmaterial, options, dirpath, erracc) # pylint: disable=assignment-from-no-return
             tasks.append(asyncio.create_task(coro))
 
         await asyncio.gather(*tasks)

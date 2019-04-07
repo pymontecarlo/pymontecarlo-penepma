@@ -15,16 +15,28 @@ from pypenelopetools.material import Material as Penmaterial
 from pymontecarlo.util.error import ErrorAccumulator
 from pymontecarlo.options.material import Material
 from pymontecarlo.options.sample import InclusionSample, HorizontalLayerSample, VerticalLayerSample, SphereSample
+from pymontecarlo.exceptions import ProgramNotFound
 
 from pymontecarlo_penepma.exporter import PenepmaExporter
+from pymontecarlo_penepma.program import PenepmaProgram
 
 # Globals and constants variables.
+
+def _has_penepma():
+    try:
+        program = PenepmaProgram()
+        program.executable # Raise ProgramNotFound
+    except ProgramNotFound:
+        return False
+
+    return True
 
 @pytest.fixture
 def exporter():
     return PenepmaExporter()
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(not _has_penepma(), reason='Requires material program')
 async def test_exporter_write_material(event_loop, exporter, options, tmp_path):
     penmaterial = Penmaterial(name='test',
                               composition={29: 0.5, 30: 0.5},
@@ -36,6 +48,9 @@ async def test_exporter_write_material(event_loop, exporter, options, tmp_path):
     assert tmp_path.joinpath(penmaterial.filename).exists()
 
 def _test_export(outputdir, expected_number_materials, expected_number_modules):
+    if not _has_penepma():
+        return
+
     # Test ini
     infilepath = outputdir.joinpath(PenepmaExporter.DEFAULT_IN_FILENAME)
     assert infilepath.exists()
