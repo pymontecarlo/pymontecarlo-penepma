@@ -35,6 +35,10 @@ def _has_penepma():
 def exporter():
     return PenepmaExporter()
 
+@pytest.fixture
+def dry_run():
+    return not _has_penepma()
+
 @pytest.mark.asyncio
 @pytest.mark.skipif(not _has_penepma(), reason='Requires material program')
 async def test_exporter_write_material(event_loop, exporter, options, tmp_path):
@@ -47,8 +51,8 @@ async def test_exporter_write_material(event_loop, exporter, options, tmp_path):
 
     assert tmp_path.joinpath(penmaterial.filename).exists()
 
-def _test_export(outputdir, expected_number_materials, expected_number_modules):
-    if not _has_penepma():
+def _test_export(outputdir, expected_number_materials, expected_number_modules, dry_run):
+    if dry_run:
         return
 
     # Test ini
@@ -76,65 +80,65 @@ def _test_export(outputdir, expected_number_materials, expected_number_modules):
     assert len(geometry.get_modules()) == expected_number_modules
 
 @pytest.mark.asyncio
-async def test_exporter_substrate(event_loop, exporter, options, tmp_path):
-    await exporter.export(options, tmp_path)
-    _test_export(tmp_path, 1, 1)
+async def test_exporter_substrate(event_loop, exporter, options, tmp_path, dry_run):
+    await exporter.export(options, tmp_path, dry_run=dry_run)
+    _test_export(tmp_path, 1, 1, dry_run)
 
 @pytest.mark.asyncio
-async def test_exporter_inclusion(event_loop, exporter, options, tmp_path):
+async def test_exporter_inclusion(event_loop, exporter, options, tmp_path, dry_run):
     mat1 = Material('Mat1', {79: 0.5, 47: 0.5}, 2.0)
     mat2 = Material('Mat2', {29: 0.5, 30: 0.5}, 3.0)
     options.sample = InclusionSample(mat1, mat2, 10e-6)
 
-    await exporter.export(options, tmp_path)
-    _test_export(tmp_path, 2, 2)
+    await exporter.export(options, tmp_path, dry_run=dry_run)
+    _test_export(tmp_path, 2, 2, dry_run)
 
 @pytest.mark.asyncio
-async def test_exporter_horizontallayers(event_loop, exporter, options, tmp_path):
+async def test_exporter_horizontallayers(event_loop, exporter, options, tmp_path, dry_run):
     mat1 = Material('Mat1', {79: 0.5, 47: 0.5}, 2.0)
     mat2 = Material('Mat2', {29: 0.5, 30: 0.5}, 3.0)
     options.sample = HorizontalLayerSample(mat1)
     options.sample.add_layer(mat2, 10e-9)
 
-    await exporter.export(options, tmp_path)
-    _test_export(tmp_path, 2, 2)
+    await exporter.export(options, tmp_path, dry_run=dry_run)
+    _test_export(tmp_path, 2, 2, dry_run)
 
 @pytest.mark.asyncio
-async def test_exporter_horizontallayers_no_substrate(event_loop, exporter, options, tmp_path):
+async def test_exporter_horizontallayers_no_substrate(event_loop, exporter, options, tmp_path, dry_run):
     mat1 = Material('Mat1', {79: 0.5, 47: 0.5}, 2.0)
     mat2 = Material('Mat2', {29: 0.5, 30: 0.5}, 3.0)
     options.sample = HorizontalLayerSample()
     options.sample.add_layer(mat1, 10e-9)
     options.sample.add_layer(mat2, 10e-9)
 
-    await exporter.export(options, tmp_path)
-    _test_export(tmp_path, 2, 2)
+    await exporter.export(options, tmp_path, dry_run=dry_run)
+    _test_export(tmp_path, 2, 2, dry_run)
 
 @pytest.mark.asyncio
-async def test_exporter_verticallayers(event_loop, exporter, options, tmp_path):
+async def test_exporter_verticallayers(event_loop, exporter, options, tmp_path, dry_run):
     mat1 = Material('Mat1', {79: 0.5, 47: 0.5}, 2.0)
     mat2 = Material('Mat2', {29: 0.5, 30: 0.5}, 3.0)
     options.sample = VerticalLayerSample(mat1, mat1)
     options.sample.add_layer(mat2, 100e-6)
 
-    await exporter.export(options, tmp_path)
-    _test_export(tmp_path, 3, 3)
+    await exporter.export(options, tmp_path, dry_run=dry_run)
+    _test_export(tmp_path, 3, 3, dry_run)
     # It should be only two materials, but for now the same material
     # may be exported several times.
 
 @pytest.mark.asyncio
-async def test_exporter_verticallayers_couple(event_loop, exporter, options, tmp_path):
+async def test_exporter_verticallayers_couple(event_loop, exporter, options, tmp_path, dry_run):
     mat1 = Material('Mat1', {79: 0.5, 47: 0.5}, 2.0)
     mat2 = Material('Mat2', {29: 0.5, 30: 0.5}, 3.0)
     options.sample = VerticalLayerSample(mat1, mat2)
 
-    await exporter.export(options, tmp_path)
-    _test_export(tmp_path, 2, 2)
+    await exporter.export(options, tmp_path, dry_run=dry_run)
+    _test_export(tmp_path, 2, 2, dry_run)
 
 @pytest.mark.asyncio
-async def test_exporter_sphere(event_loop, exporter, options, tmp_path):
+async def test_exporter_sphere(event_loop, exporter, options, tmp_path, dry_run):
     mat1 = Material('Mat1', {79: 0.5, 47: 0.5}, 2.0)
     options.sample = SphereSample(mat1, 250e-6)
 
-    await exporter.export(options, tmp_path)
-    _test_export(tmp_path, 1, 1)
+    await exporter.export(options, tmp_path, dry_run=dry_run)
+    _test_export(tmp_path, 1, 1, dry_run)
