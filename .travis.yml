@@ -12,7 +12,7 @@ before_install:
 - git config lfs.fetchexclude "pymontecarlo_penepma/penepma"
 - git lfs pull
 install:
-- ls -la pymontecarlo/pymontecarlo-penepma/pymontecarlo_penepma/penepma/bin_linux
+- ls -la pymontecarlo_penepma/penepma/bin_linux
 - pip install --upgrade git+https://github.com/pymontecarlo/pymontecarlo.git@async
 - pip install --cache-dir $HOME/.pip-cache --upgrade git+https://github.com/pymontecarlo/pypenelopetools.git
 - pip install --upgrade pip codecov
