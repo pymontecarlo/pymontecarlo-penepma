@@ -3,12 +3,15 @@
 # Standard library modules.
 import os
 import sys
+import functools
+import itertools
+import operator
 
 # Third party modules.
 
 # Local modules.
 import pymontecarlo.options.base as base
-from pymontecarlo.options.program.base import ProgramBase
+from pymontecarlo.options.program.base import ProgramBase, ProgramBuilderBase
 from pymontecarlo.exceptions import ProgramNotFound
 
 from pymontecarlo_penepma.expander import PenepmaExpander
@@ -227,3 +230,62 @@ class PenepmaProgram(ProgramBase):
         section.add_entity(self.reference_line)
 
 #endregion
+
+class PenepmaProgramBuilder(ProgramBuilderBase):
+
+    def __init__(self):
+        self.simulation_parameters = []
+        self.interaction_forcings = []
+        self.reference_lines = []
+        self.simulation_times_s = set()
+        self.number_trajectories = set()
+
+    def __len__(self):
+        it = [super().__len__(),
+              len(self.simulation_parameters) or 1,
+              len(self.interaction_forcings) or 1,
+              len(self.reference_lines) or 1,
+              len(self.simulation_times_s) or 1,
+              len(self.number_trajectories) or 1]
+        return functools.reduce(operator.mul, it)
+
+    def add_simulation_parameterS(self, simulation_parameters):
+        if simulation_parameters not in self.simulation_parameters:
+            self.simulation_parameters.append(simulation_parameters)
+
+    def add_interaction_forcings(self, interaction_forcings):
+        if interaction_forcings not in self.interaction_forcings:
+            self.interaction_forcings.append(interaction_forcings)
+
+    def add_reference_line(self, reference_line):
+        if reference_line not in self.reference_lines:
+            self.reference_lines.append(reference_line)
+
+    def add_simulation_time_s(self, simulation_time_s):
+        if simulation_time_s not in self.simulation_times_s:
+            self.simulation_times_s.add(simulation_time_s)
+
+    def add_number_trajectories(self, number_trajectories):
+        if number_trajectories not in self.number_trajectories:
+            self.number_trajectories.add(number_trajectories)
+
+    def build(self):
+        default = PenepmaProgram()
+        simulation_parameters = self.simulation_parameters or [default.simulation_parameters]
+        interaction_forcings = self.interaction_forcings or [default.interaction_forcings]
+        reference_lines = self.reference_lines or [default.reference_line]
+        simulation_times_s = self.simulation_times_s or [default.simulation_time_s]
+        number_trajectories = self.number_trajectories or [default.number_trajectories]
+
+        product = itertools.product(simulation_parameters,
+                                    interaction_forcings,
+                                    reference_lines,
+                                    simulation_times_s,
+                                    number_trajectories)
+
+        programs = []
+        for args in product:
+            program = PenepmaProgram(*args)
+            programs.append(program)
+
+        return programs
