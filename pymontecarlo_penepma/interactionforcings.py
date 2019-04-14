@@ -172,7 +172,7 @@ class LazyInteractionForcings(base.LazyOptionBase):
     def convert_document(self, builder):
         super().convert_document(builder)
 
-        text = ('Default interaction forcings created using'
-                'a forcer of -40 for hard Bremsstrahlung emission and inner shell impact ionisation'
+        text = ('Default interaction forcings created using '
+                'a forcer of -40 for hard Bremsstrahlung emission and inner shell impact ionisation '
                 'The Bremsstrahlung and characteristic X-ray splitting factor is set to 2')
         builder.add_text(text)

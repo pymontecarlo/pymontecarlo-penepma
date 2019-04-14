@@ -117,7 +117,7 @@ class LazySimulationParameters(base.LazyOptionBase):
     def convert_document(self, builder):
         super().convert_document(builder)
 
-        text = ('Default simulation parameters created using'
+        text = ('Default simulation parameters created using '
                 'c1 and c2 equal to 0.2, no positron '
                 'and the electron and photon absorption energy set to 100eV below the X-ray line with the lowest energy')
         builder.add_text(text)
