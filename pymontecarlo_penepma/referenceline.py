@@ -75,9 +75,16 @@ class ReferenceLine(base.OptionBase):
 
 class LazyReferenceLine(base.LazyOptionBase):
 
+    RELATIVE_UNCERTAINTY_TOLERANCE = ReferenceLine.RELATIVE_UNCERTAINTY_TOLERANCE
+
     def __init__(self, relative_uncertainty=0.05, xrayline=None):
         self.relative_uncertainty = relative_uncertainty
         self.xrayline = xrayline
+
+    def __eq__(self, other):
+        return super().__eq__(other) and \
+            base.isclose(self.relative_uncertainty, other.relative_uncertainty, abs_tol=self.RELATIVE_UNCERTAINTY_TOLERANCE) and \
+            base.isclose(self.xrayline, other.xrayline)
 
     def apply(self, parent_option, options):
         photon_detectors = options.find_detectors(PhotonDetector)
