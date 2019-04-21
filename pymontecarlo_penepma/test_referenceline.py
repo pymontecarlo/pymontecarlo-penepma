@@ -25,7 +25,7 @@ def reference_line():
 def test_reference_line(reference_line):
     assert reference_line.xrayline == pyxray.xray_line(13, 'Ka1')
     assert reference_line.photon_detector.name == 'det'
-    assert reference_line.relative_tolerance == pytest.approx(0.05, abs=1e-4)
+    assert reference_line.relative_uncertainty == pytest.approx(0.05, abs=1e-4)
 
 def test_reference_line_eq(reference_line):
     xrayline = pyxray.xray_line(13, 'Ka1')

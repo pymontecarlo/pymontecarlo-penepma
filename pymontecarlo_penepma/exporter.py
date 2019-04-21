@@ -246,8 +246,8 @@ class PenepmaExporter(ExporterBase):
         # Reference line
         reference_line = apply_lazy(program.reference_line, program, options)
         if reference_line is not None:
-            if reference_line.relative_tolerance <= 0.0:
-                exc = ValueError('Relative tolerance must be greater than 0')
+            if reference_line.relative_uncertainty <= 0.0:
+                exc = ValueError('Relative uncertainty must be greater than 0')
                 erracc.add_exception(exc)
 
         # Number of trajectories
@@ -262,6 +262,11 @@ class PenepmaExporter(ExporterBase):
 
         if simulation_time_s <= 0:
             exc = ValueError('Simulation time must be greater than 0')
+            erracc.add_exception(exc)
+
+        # At least one termination condition should be selected
+        if reference_line is None and number_trajectories >= 1e38 and simulation_time_s >= 1e38:
+            exc = ValueError('At least one termination condition should be specified')
             erracc.add_exception(exc)
 
     def _export_program(self, program, options, erracc, input, geometry, index_lookup):
@@ -316,9 +321,9 @@ class PenepmaExporter(ExporterBase):
                 erracc.add_exception(exc)
                 index_detector = 0
 
-            relative_tolerance = reference_line.relative_tolerance
+            relative_uncertainty = reference_line.relative_uncertainty
 
-            input.REFLIN.set(izs1s200, index_detector, relative_tolerance)
+            input.REFLIN.set(izs1s200, index_detector, relative_uncertainty)
 
         # Number of trajectories
         number_trajectories = apply_lazy(program.number_trajectories, program, options)

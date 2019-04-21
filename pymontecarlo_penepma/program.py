@@ -76,7 +76,7 @@ class PenepmaProgram(ProgramBase):
         self.interaction_forcings = interaction_forcings
 
         if reference_line is DEFAULT:
-            reference_line = LazyReferenceLine(relative_tolerance=0.05)
+            reference_line = LazyReferenceLine(relative_uncertainty=0.05)
         self.reference_line = reference_line
 
         self.simulation_time_s = simulation_time_s
