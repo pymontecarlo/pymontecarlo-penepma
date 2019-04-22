@@ -25,7 +25,7 @@ def program(simulation_parameters):
 def test_program(program, simulation_parameters):
     assert program.simulation_parameters == simulation_parameters
     assert program.interaction_forcings == LazyInteractionForcings()
-    assert program.reference_line == LazyReferenceLine(0.05)
+    assert program.reference_line is None
     assert program.simulation_time_s == 5
     assert program.number_trajectories == 6
 

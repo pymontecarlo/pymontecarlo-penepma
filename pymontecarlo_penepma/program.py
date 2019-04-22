@@ -12,7 +12,7 @@ import operator
 # Local modules.
 import pymontecarlo.options.base as base
 from pymontecarlo.options.program.base import ProgramBase, ProgramBuilderBase
-from pymontecarlo.exceptions import ProgramNotFound
+from pymontecarlo.exceptions import ProgramNotFound, ParseError
 
 from pymontecarlo_penepma.expander import PenepmaExpander
 from pymontecarlo_penepma.exporter import PenepmaExporter
@@ -20,7 +20,7 @@ from pymontecarlo_penepma.importer import PenepmaImporter
 from pymontecarlo_penepma.worker import PenepmaWorker
 from pymontecarlo_penepma.simulationparameters import SimulationParameters, LazySimulationParameters
 from pymontecarlo_penepma.interactionforcings import InteractionForcings, LazyInteractionForcings
-from pymontecarlo_penepma.referenceline import ReferenceLine, LazyReferenceLine
+from pymontecarlo_penepma.referenceline import ReferenceLine
 
 # Globals and constants variables.
 DEFAULT = object()
@@ -31,7 +31,7 @@ class PenepmaProgram(ProgramBase):
 
     def __init__(self, simulation_parameters=DEFAULT,
                  interaction_forcings=DEFAULT,
-                 reference_line=DEFAULT,
+                 reference_line=None,
                  simulation_time_s=1e38,
                  number_trajectories=1e38):
         """
@@ -48,11 +48,8 @@ class PenepmaProgram(ProgramBase):
                 are adjusted to the simulation (see :class:`LazyInteractionForcings`).
             reference_line (ReferenceLine):
                 Termination condition based on the relative uncertainty on
-                a certain X-ray line. By default, the reference line is defined
-                as the lowest X-ray line for the simulation with a relative
-                uncertainty of 5% (see :class:`LazyReferenceLine`). If
-                *reference_line* is ``None``, this termination condition is
-                disabled.
+                a certain X-ray line. If *reference_line* is ``None`` (default),
+                this termination condition is disabled.
             simulation_time_s (int):
                 Termination condition based on the simulation time (in seconds).
                 By default, the simulation time is set to 1e38 (i.e. infinite).
@@ -75,8 +72,6 @@ class PenepmaProgram(ProgramBase):
             interaction_forcings = LazyInteractionForcings()
         self.interaction_forcings = interaction_forcings
 
-        if reference_line is DEFAULT:
-            reference_line = LazyReferenceLine(relative_uncertainty=0.05)
         self.reference_line = reference_line
 
         self.simulation_time_s = simulation_time_s
@@ -177,7 +172,12 @@ class PenepmaProgram(ProgramBase):
     def parse_hdf5(cls, group):
         simulation_parameters = cls._parse_hdf5(group, cls.ATTR_SIMULATION_PARAMETERS, SimulationParameters)
         interaction_forcings = cls._parse_hdf5(group, cls.ATTR_INTERACTION_FORCINGS, InteractionForcings)
-        reference_line = cls._parse_hdf5(group, cls.ATTR_REFERENCE_LINE, ReferenceLine)
+
+        try:
+            reference_line = cls._parse_hdf5(group, cls.ATTR_REFERENCE_LINE, ReferenceLine)
+        except ParseError:
+            reference_line = None
+
         simulation_time_s = cls._parse_hdf5(group, cls.ATTR_SIMULATION_TIME, float)
         number_trajectories = cls._parse_hdf5(group, cls.ATTR_NUMBER_TRAJECTORIES, int)
         return cls(simulation_parameters, interaction_forcings, reference_line, simulation_time_s, number_trajectories)
@@ -186,7 +186,8 @@ class PenepmaProgram(ProgramBase):
         super().convert_hdf5(group)
         self._convert_hdf5(group, self.ATTR_SIMULATION_PARAMETERS, self.simulation_parameters)
         self._convert_hdf5(group, self.ATTR_INTERACTION_FORCINGS, self.interaction_forcings)
-        self._convert_hdf5(group, self.ATTR_REFERENCE_LINE, self.reference_line)
+        if self.reference_line is not None:
+            self._convert_hdf5(group, self.ATTR_REFERENCE_LINE, self.reference_line)
         self._convert_hdf5(group, self.ATTR_SIMULATION_TIME, self.simulation_time_s)
         self._convert_hdf5(group, self.ATTR_NUMBER_TRAJECTORIES, self.number_trajectories)
 
@@ -199,7 +200,8 @@ class PenepmaProgram(ProgramBase):
 
         builder.add_entity(self.simulation_parameters)
         builder.add_entity(self.interaction_forcings)
-        builder.add_entity(self.reference_line)
+        if self.reference_line is not None:
+            builder.add_entity(self.reference_line)
         builder.add_column('simulation time', 'simtime', self.simulation_time_s, 's', self.SIMULATION_TIME_TOLERANCE_s)
         builder.add_column('number trajectories', 'ntraj', self.number_trajectories)
 
@@ -227,7 +229,10 @@ class PenepmaProgram(ProgramBase):
         # Reference line
         section = builder.add_section()
         section.add_title('Reference line')
-        section.add_entity(self.reference_line)
+        if self.reference_line is None:
+            section.add_text('No reference line defined')
+        else:
+            section.add_entity(self.reference_line)
 
 #endregion
 
@@ -273,7 +278,7 @@ class PenepmaProgramBuilder(ProgramBuilderBase):
         default = PenepmaProgram()
         simulation_parameters = self.simulation_parameters or [default.simulation_parameters]
         interaction_forcings = self.interaction_forcings or [default.interaction_forcings]
-        reference_lines = self.reference_lines or [default.reference_line]
+        reference_lines = self.reference_lines or [None]
         simulation_times_s = self.simulation_times_s or [default.simulation_time_s]
         number_trajectories = self.number_trajectories or [default.number_trajectories]
 
