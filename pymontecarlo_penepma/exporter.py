@@ -80,8 +80,16 @@ class PenepmaExporter(ExporterBase):
         geometry = self._create_geometry(options)
 
         # Export sample
-        self._export_sample(options.sample, options, erracc, geometry)
+        dsmaxs = {}
+        self._export_sample(options.sample, options, erracc, geometry, dsmaxs)
         index_lookup = geometry.indexify()
+
+        # Maximum step length of electrons and positrons in each body.
+        # This parameter is important only for thin bodies;
+        # it should be given a value of the order of one tenth of the body thickness or less.
+        for module, thickness_m in dsmaxs.items():
+            index = index_lookup[module]
+            input.DSMAX.add(index, thickness_m / 10.0)
 
         # Export the rest
         self._export_program(options.program, options, erracc, input, geometry, index_lookup)
@@ -403,7 +411,7 @@ class PenepmaExporter(ExporterBase):
                              .format(MAXIMUM_NUMBER_MATERIALS))
             erracc.add_exception(exc)
 
-    def _export_sample_substrate(self, sample, options, erracc, geometry):
+    def _export_sample_substrate(self, sample, options, erracc, geometry, dsmaxs):
         self._validate_sample_substrate(sample, options, erracc)
 
         # Geometry
@@ -424,10 +432,10 @@ class PenepmaExporter(ExporterBase):
         geometry.tilt_rad = apply_lazy(sample.tilt_rad, sample, options)
         geometry.rotation_rad = apply_lazy(sample.azimuth_rad, sample, options)
 
-    def _export_sample_inclusion(self, sample, options, erracc, geometry):
+    def _export_sample_inclusion(self, sample, options, erracc, geometry, dsmaxs):
         self._validate_sample_inclusion(sample, options, erracc)
 
-        # Geometry
+        # Surface
         inclusion_diameter_m = apply_lazy(sample.inclusion_diameter_m, sample, options)
 
         surface_cylinder = cylinder(100.0) # 100 cm radius
@@ -435,6 +443,7 @@ class PenepmaExporter(ExporterBase):
         surface_bottom = zplane(-100.0) # z = -100 cm
         surface_sphere = sphere(inclusion_diameter_m / 2.0 * 100.0)
 
+        # Inclusion module
         inclusion_material = apply_lazy(sample.inclusion_material, sample, options)
         penmaterial = self._export_material(inclusion_material, options, erracc, index=1)
 
@@ -442,6 +451,9 @@ class PenepmaExporter(ExporterBase):
         module_inclusion.add_surface(surface_top, SidePointer.NEGATIVE)
         module_inclusion.add_surface(surface_sphere, SidePointer.NEGATIVE)
 
+        dsmaxs[module_inclusion] = inclusion_diameter_m
+
+        # Substrate module
         substrate_material = apply_lazy(sample.substrate_material, sample, options)
         penmaterial = self._export_material(substrate_material, options, erracc, index=2)
 
@@ -451,13 +463,14 @@ class PenepmaExporter(ExporterBase):
         module_substrate.add_surface(surface_bottom, SidePointer.POSITIVE)
         module_substrate.add_module(module_inclusion)
 
+        # Geometry
         geometry.title = 'Inclusion'
         geometry.add_module(module_substrate)
         geometry.add_module(module_inclusion)
         geometry.tilt_rad = apply_lazy(sample.tilt_rad, sample, options)
         geometry.rotation_rad = apply_lazy(sample.azimuth_rad, sample, options)
 
-    def _export_sample_horizontallayers(self, sample, options, erracc, geometry):
+    def _export_sample_horizontallayers(self, sample, options, erracc, geometry, dsmaxs):
         self._validate_sample_horizontallayers(sample, options, erracc)
 
         layers = apply_lazy(sample.layers, sample, options)
@@ -482,6 +495,9 @@ class PenepmaExporter(ExporterBase):
             module.add_surface(surface_cylinder, SidePointer.NEGATIVE)
             module.add_surface(surface_top, SidePointer.NEGATIVE)
             module.add_surface(surface_bottom, SidePointer.POSITIVE)
+
+            thickness_m = apply_lazy(layer.thickness_m, layer, options)
+            dsmaxs[module] = thickness_m
 
             geometry.add_module(module)
             tmpgrouping.append((module, surface_bottom))
@@ -535,7 +551,11 @@ class PenepmaExporter(ExporterBase):
 
             geometry.add_module(group)
 
-    def _export_sample_verticallayers(self, sample, options, erracc, geometry):
+        geometry.title = 'Horizontal layers'
+        geometry.tilt_rad = apply_lazy(sample.tilt_rad, sample, options)
+        geometry.rotation_rad = apply_lazy(sample.azimuth_rad, sample, options)
+
+    def _export_sample_verticallayers(self, sample, options, erracc, geometry, dsmaxs):
         self._validate_sample_verticallayers(sample, options, erracc)
 
         layers = apply_lazy(sample.layers, sample, options)
@@ -579,6 +599,9 @@ class PenepmaExporter(ExporterBase):
         module.add_surface(surface_bottom, SidePointer.POSITIVE)
         module.add_surface(surface_layers[0], SidePointer.NEGATIVE)
 
+        if math.isfinite(depth_m):
+            dsmaxs[module] = depth_m
+
         geometry.add_module(module)
         index += 1
 
@@ -594,6 +617,9 @@ class PenepmaExporter(ExporterBase):
             module.add_surface(surface_left, SidePointer.POSITIVE)
             module.add_surface(surface_right, SidePointer.NEGATIVE)
 
+            thickness_m = apply_lazy(layer.thickness_m, layer, options)
+            dsmaxs[module] = min(thickness_m, depth_m)
+
             geometry.add_module(module)
             index += 1
 
@@ -607,9 +633,15 @@ class PenepmaExporter(ExporterBase):
         module.add_surface(surface_bottom, SidePointer.POSITIVE)
         module.add_surface(surface_layers[-1], SidePointer.POSITIVE)
 
-        geometry.add_module(module)
+        if math.isfinite(depth_m):
+            dsmaxs[module] = depth_m
 
-    def _export_sample_sphere(self, sample, options, erracc, geometry):
+        geometry.title = 'Vertical layers'
+        geometry.add_module(module)
+        geometry.tilt_rad = apply_lazy(sample.tilt_rad, sample, options)
+        geometry.rotation_rad = apply_lazy(sample.azimuth_rad, sample, options)
+
+    def _export_sample_sphere(self, sample, options, erracc, geometry, dsmaxs):
         self._validate_sample_sphere(sample, options, erracc)
 
         # Surfaces
@@ -625,7 +657,12 @@ class PenepmaExporter(ExporterBase):
         module.add_surface(surface_sphere, SidePointer.NEGATIVE)
         module.shift.z_m = -radius_m
 
+        dsmaxs[module] = diameter_m
+
+        geometry.title = 'Sphere'
         geometry.add_module(module)
+        geometry.tilt_rad = apply_lazy(sample.tilt_rad, sample, options)
+        geometry.rotation_rad = apply_lazy(sample.azimuth_rad, sample, options)
 
     def _validate_detector(self, detector, options, erracc):
         super()._validate_detector(detector, options, erracc)
