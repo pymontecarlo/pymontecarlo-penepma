@@ -23,7 +23,7 @@ from pypenelopetools.penepma.utils import convert_xrayline_to_izs1s200
 
 # Local modules.
 from pymontecarlo.options.base import apply_lazy
-from pymontecarlo.options.beam.cylindrical import CylindricalBeam
+from pymontecarlo.options.beam import PencilBeam, CylindricalBeam
 from pymontecarlo.options.particle import Particle
 from pymontecarlo.options.sample import  \
     SubstrateSample, HorizontalLayerSample, VerticalLayerSample, InclusionSample, SphereSample
@@ -60,6 +60,7 @@ class PenepmaExporter(ExporterBase):
         self.photon_detector_elevation_opening_rad = math.radians(10)
         self.photon_detector_azimuth_opening_rad = math.radians(15)
 
+        self.beam_export_methods[PencilBeam] = self._export_beam_pencil
         self.beam_export_methods[CylindricalBeam] = self._export_beam_cylindrical
 
         self.sample_export_methods[SubstrateSample] = self._export_sample_substrate
@@ -357,8 +358,26 @@ class PenepmaExporter(ExporterBase):
                              .format(particle))
             erracc.add_exception(exc)
 
+    def _export_beam_pencil(self, beam, options, erracc, input):
+        self._validate_beam_pencil(beam, options, erracc)
+
+        particle = apply_lazy(beam.particle, beam, options)
+        input.SKPAR.set(PARTICLE_INDEX[particle])
+
+        energy_eV = apply_lazy(beam.energy_eV, beam, options)
+        input.SENERG.set(energy_eV)
+
+        x0_m = apply_lazy(beam.x0_m, beam, options)
+        y0_m = apply_lazy(beam.y0_m, beam, options)
+        input.SPOSIT.set(x0_m * 1e2, y0_m * 1e2, 1.0) # cm
+
+        input.SRADI.set(0.0) # cm
+
+        input.SDIREC.set(180.0, 0.0) # pointing downwards
+        input.SAPERT.set(0.0)
+
     def _export_beam_cylindrical(self, beam, options, erracc, input):
-        self._validate_beam(beam, options, erracc)
+        self._validate_beam_cylindrical(beam, options, erracc)
 
         particle = apply_lazy(beam.particle, beam, options)
         input.SKPAR.set(PARTICLE_INDEX[particle])

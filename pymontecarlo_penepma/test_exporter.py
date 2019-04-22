@@ -14,6 +14,7 @@ from pypenelopetools.material import Material as Penmaterial
 # Local modules.
 from pymontecarlo.util.error import ErrorAccumulator
 from pymontecarlo.options.material import Material
+from pymontecarlo.options.beam import PencilBeam
 from pymontecarlo.options.sample import InclusionSample, HorizontalLayerSample, VerticalLayerSample, SphereSample
 from pymontecarlo.exceptions import ProgramNotFound
 
@@ -78,6 +79,12 @@ def _test_export(outputdir, expected_number_materials, expected_number_modules, 
         geometry.read(fp, material_lookup)
 
     assert len(geometry.get_modules()) == expected_number_modules
+
+@pytest.mark.asyncio
+async def test_exporter_beam_pencil(event_loop, exporter, options, tmp_path, dry_run):
+    options.beam = PencilBeam(10e3)
+    await exporter.export(options, tmp_path, dry_run=dry_run)
+    _test_export(tmp_path, 1, 1, dry_run)
 
 @pytest.mark.asyncio
 async def test_exporter_substrate(event_loop, exporter, options, tmp_path, dry_run):
