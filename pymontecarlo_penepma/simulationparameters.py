@@ -3,10 +3,12 @@
 # Standard library modules.
 
 # Third party modules.
+import pyxray
 
 # Local modules.
 import pymontecarlo.options.base as base
-from pymontecarlo.util.xrayline import find_reference_xrayline
+from pymontecarlo.options.particle import Particle
+from pymontecarlo.options.xrayline import LazyLowestEnergyXrayLine
 
 # Globals and constants variables.
 
@@ -104,20 +106,85 @@ class SimulationParameters(base.OptionBase):
 
 class LazySimulationParameters(base.LazyOptionBase):
 
-    def apply(self, parent_option, options):
-        xrayline = find_reference_xrayline(options)
-        xrayline_energy_eV = xrayline.energy_eV - 100
+    C1_C2_TOLERANCE = SimulationParameters.C1_C2_TOLERANCE
 
-        return SimulationParameters(eabs_electron_eV=xrayline_energy_eV,
-                                    eabs_photon_eV=xrayline_energy_eV,
-                                    eabs_positron_eV=options.beam.energy_eV,
-                                    c1=0.2, c2=0.2,
+    def __init__(self, xrayline=None, c1=0.2, c2=0.2):
+        super().__init__()
+
+        if xrayline is None:
+            xrayline = LazyLowestEnergyXrayLine(minimum_energy_eV=100)
+        self.xrayline = xrayline
+        self.c1 = c1
+        self.c2 = c2
+
+    def __eq__(self, other):
+        return super().__eq__(other) and \
+            base.isclose(self.xrayline, other.xrayline) and \
+            base.isclose(self.c1, other.c1, abs_tol=self.C1_C2_TOLERANCE) and \
+            base.isclose(self.c2, other.c2, abs_tol=self.C1_C2_TOLERANCE)
+
+    def apply(self, parent_option, options):
+        xrayline = base.apply_lazy(self.xrayline, self, options)
+        c1 = base.apply_lazy(self.c1, self, options)
+        c2 = base.apply_lazy(self.c2, self, options)
+        beam_energy_eV = base.apply_lazy(options.beam.energy_eV, options.beam, options)
+        beam_particle = base.apply_lazy(options.beam.particle, options.beam, options)
+
+        xrayline_energy_eV = max(xrayline.energy_eV - 100, 0.0)
+
+        if beam_particle == Particle.ELECTRON:
+            eabs_electron_eV = eabs_photon_eV = xrayline_energy_eV
+            eabs_positron_eV = beam_energy_eV
+        elif beam_particle == Particle.PHOTON:
+            eabs_electron_eV = eabs_photon_eV = eabs_positron_eV = xrayline_energy_eV
+        elif beam_particle == Particle.POSITRON:
+            eabs_electron_eV = beam_energy_eV
+            eabs_photon_eV = eabs_positron_eV = xrayline_energy_eV
+        else:
+            eabs_electron_eV = eabs_photon_eV = eabs_positron_eV = beam_energy_eV
+
+        return SimulationParameters(eabs_electron_eV=eabs_electron_eV,
+                                    eabs_photon_eV=eabs_photon_eV,
+                                    eabs_positron_eV=eabs_positron_eV,
+                                    c1=c1, c2=c2,
                                     wcc_eV=xrayline_energy_eV, wcr_eV=xrayline_energy_eV)
+
+#region HDF5
+
+    ATTR_XRAYLINE = 'xray line'
+    ATTR_C1 = 'c1'
+    ATTR_C2 = 'c2'
+
+    @classmethod
+    def parse_hdf5(cls, group):
+        xrayline = cls._parse_hdf5(group, cls.ATTR_XRAYLINE, pyxray.XrayLine)
+        c1 = cls._parse_hdf5(group, cls.ATTR_C1, float)
+        c2 = cls._parse_hdf5(group, cls.ATTR_C2, float)
+        return cls(xrayline, c1, c2)
+
+    def convert_hdf5(self, group):
+        super().convert_hdf5(group)
+        self._convert_hdf5(group, self.ATTR_XRAYLINE, self.xrayline)
+        self._convert_hdf5(group, self.ATTR_C1, self.c1)
+        self._convert_hdf5(group, self.ATTR_C2, self.c2)
+
+#endregion
+
+#region Series
+
+    def convert_series(self, builder):
+        super().convert_series(builder)
+
+#endregion
+
+#region Document
 
     def convert_document(self, builder):
         super().convert_document(builder)
 
-        text = ('Default simulation parameters created using '
-                'c1 and c2 equal to 0.2, no positron '
-                'and the electron and photon absorption energy set to 100eV below the X-ray line with the lowest energy')
-        builder.add_text(text)
+        description = builder.require_description(SimulationParameters.DESCRIPTION_SIMULATION_PARAMETERS)
+        description.add_item('Lowest energy X-ray line', self.xrayline)
+        description.add_item('C1', self.c1, None, self.C1_C2_TOLERANCE)
+        description.add_item('C2', self.c2, None, self.C1_C2_TOLERANCE)
+
+#endregion

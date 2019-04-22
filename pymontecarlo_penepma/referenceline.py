@@ -3,10 +3,11 @@
 # Standard library modules.
 
 # Third party modules.
+import pyxray
 
 # Local modules.
 import pymontecarlo.options.base as base
-from pymontecarlo.util.xrayline import find_reference_xrayline, convert_xrayline
+from pymontecarlo.options.xrayline import LazyLowestEnergyXrayLine
 from pymontecarlo.options.detector import PhotonDetector
 
 # Globals and constants variables.
@@ -36,14 +37,14 @@ class ReferenceLine(base.OptionBase):
 
     @classmethod
     def parse_hdf5(cls, group):
-        xrayline = convert_xrayline(cls._parse_hdf5(group, cls.ATTR_XRAYLINE, str).split())
+        xrayline = cls._parse_hdf5(group, cls.ATTR_XRAYLINE, pyxray.XrayLine)
         photon_detector = cls._parse_hdf5(group, cls.ATTR_PHOTON_DETECTOR, PhotonDetector)
         relative_uncertainty = cls._parse_hdf5(group, cls.ATTR_RELATIVE_UNCERTAINTY, float)
         return cls(xrayline, photon_detector, relative_uncertainty)
 
     def convert_hdf5(self, group):
         super().convert_hdf5(group)
-        self._convert_hdf5(group, self.ATTR_XRAYLINE, self.xrayline.iupac)
+        self._convert_hdf5(group, self.ATTR_XRAYLINE, self.xrayline)
         self._convert_hdf5(group, self.ATTR_PHOTON_DETECTOR, self.photon_detector)
         self._convert_hdf5(group, self.ATTR_RELATIVE_UNCERTAINTY, self.relative_uncertainty)
 
@@ -77,8 +78,12 @@ class LazyReferenceLine(base.LazyOptionBase):
 
     RELATIVE_UNCERTAINTY_TOLERANCE = ReferenceLine.RELATIVE_UNCERTAINTY_TOLERANCE
 
-    def __init__(self, relative_uncertainty=0.05, xrayline=None):
+    def __init__(self, xrayline=None, relative_uncertainty=0.05):
+        super().__init__()
         self.relative_uncertainty = relative_uncertainty
+
+        if xrayline is None:
+            xrayline = LazyLowestEnergyXrayLine(minimum_energy_eV=100.0)
         self.xrayline = xrayline
 
     def __eq__(self, other):
@@ -86,28 +91,56 @@ class LazyReferenceLine(base.LazyOptionBase):
             base.isclose(self.relative_uncertainty, other.relative_uncertainty, abs_tol=self.RELATIVE_UNCERTAINTY_TOLERANCE) and \
             base.isclose(self.xrayline, other.xrayline)
 
-    def apply(self, parent_option, options):
+    def _find_detector(self, options):
         photon_detectors = options.find_detectors(PhotonDetector)
         if not photon_detectors:
-            return None
-
-        xrayline = self.xrayline
-        if xrayline is None:
-            xrayline = find_reference_xrayline(options)
+            raise ValueError('No photon detector found')
 
         detector_elevations = {}
         for photon_detector in photon_detectors:
             detector_elevations[photon_detector.elevation_rad] = photon_detector
 
-        photon_detector = detector_elevations[min(detector_elevations.keys())]
+        return detector_elevations[min(detector_elevations.keys())]
 
-        return ReferenceLine(xrayline, photon_detector, self.relative_uncertainty)
+    def apply(self, parent_option, options):
+        xrayline = base.apply_lazy(self.xrayline, self, options)
+        photon_detector = self._find_detector(options)
+        relative_uncertainty = base.apply_lazy(self.relative_uncertainty, self, options)
+        return ReferenceLine(xrayline, photon_detector, relative_uncertainty)
+
+#region HDF5
+
+    ATTR_XRAYLINE = 'xray line'
+    ATTR_RELATIVE_UNCERTAINTY = 'relative uncertainty'
+
+    @classmethod
+    def parse_hdf5(cls, group):
+        xrayline = cls._parse_hdf5(group, cls.ATTR_XRAYLINE, pyxray.XrayLine)
+        relative_uncertainty = cls._parse_hdf5(group, cls.ATTR_RELATIVE_UNCERTAINTY, float)
+        return cls(xrayline, relative_uncertainty)
+
+    def convert_hdf5(self, group):
+        super().convert_hdf5(group)
+        self._convert_hdf5(group, self.ATTR_XRAYLINE, self.xrayline)
+        self._convert_hdf5(group, self.ATTR_RELATIVE_UNCERTAINTY, self.relative_uncertainty)
+
+#endregion
+
+#region Series
+
+    def convert_series(self, builder):
+        super().convert_series(builder)
+
+#endregion
+
+#region Document
 
     def convert_document(self, builder):
         super().convert_document(builder)
 
-        text = ('Default reference line created using '
-                'the X-ray line with the lower energy, '
-                'photon detector with the lowest elevation and '
-                'a tolerance of {:.2f}%'.format(self.relative_uncertainty))
-        builder.add_text(text)
+        description = builder.require_description(ReferenceLine.DESCRIPTION_REFERENCE_LINE)
+        description.add_item('X-ray line', self.xrayline)
+        description.add_item('Photon detector', 'Lowest elevation photon detector')
+        description.add_item('Relative uncertainty', self.relative_uncertainty, None, self.RELATIVE_UNCERTAINTY_TOLERANCE)
+
+#endregion

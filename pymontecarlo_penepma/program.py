@@ -254,7 +254,7 @@ class PenepmaProgramBuilder(ProgramBuilderBase):
               len(self.number_trajectories) or 1]
         return functools.reduce(operator.mul, it)
 
-    def add_simulation_parameterS(self, simulation_parameters):
+    def add_simulation_parameters(self, simulation_parameters):
         if simulation_parameters not in self.simulation_parameters:
             self.simulation_parameters.append(simulation_parameters)
 

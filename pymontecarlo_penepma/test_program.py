@@ -10,7 +10,6 @@ import pymontecarlo.util.testutil as testutil
 from pymontecarlo_penepma.program import PenepmaProgram
 from pymontecarlo_penepma.simulationparameters import SimulationParameters
 from pymontecarlo_penepma.interactionforcings import LazyInteractionForcings
-from pymontecarlo_penepma.referenceline import LazyReferenceLine
 
 # Globals and constants variables.
 
