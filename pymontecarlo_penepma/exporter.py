@@ -695,8 +695,8 @@ class PenepmaExporter(ExporterBase):
         # defined as angle from the positive z-axis
         elevation_deg = apply_lazy(detector.elevation_deg, detector, options)
         elevation_opening_deg = math.degrees(self.photon_detector_elevation_opening_rad)
-        theta1 = 90.0 - (elevation_deg - elevation_opening_deg)
-        theta2 = 90.0 - (elevation_deg + elevation_opening_deg)
+        theta1 = 90.0 - (elevation_deg + elevation_opening_deg)
+        theta2 = 90.0 - (elevation_deg - elevation_opening_deg)
 
         # Energy windows
         # FIXME: Support spectrum
