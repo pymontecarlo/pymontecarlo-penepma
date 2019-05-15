@@ -55,7 +55,9 @@ class PenepmaExporter(ExporterBase):
     def __init__(self):
         super().__init__()
 
-        self.dump_interval_s = 60
+        self._write_materials_lock = asyncio.Lock()
+
+        self.dump_interval_s = 30
         self.random_seeds = (-10, 1)
         self.photon_detector_elevation_opening_rad = math.radians(10)
         self.photon_detector_azimuth_opening_rad = math.radians(15)
@@ -106,7 +108,8 @@ class PenepmaExporter(ExporterBase):
                 geometry.write(fileobj, index_lookup)
 
             # Write material files
-            await self._write_materials(options, dirpath, erracc, geometry)
+            async with self._write_materials_lock:
+                await self._write_materials(options, dirpath, erracc, geometry)
 
             # Write in file
             infilepath = os.path.join(dirpath, self.DEFAULT_IN_FILENAME)
