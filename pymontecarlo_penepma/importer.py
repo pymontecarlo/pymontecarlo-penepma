@@ -28,20 +28,24 @@ class PenepmaImporter(ImporterBase):
     def _import_analysis_photonintensity(self, options, analysis, dirpath, errors):
         # Find detector index
         detectors = options.detectors
-        detector_index = detectors.index(analysis.detector)
+        detector_index = detectors.index(analysis.detector) + 1
 
         # Read emitted intensities
         result = PenepmaEmittedIntensityResult(detector_index)
+        result.read_directory(dirpath)
+
         emitted_builder = EmittedPhotonIntensityResultBuilder(analysis)
 
-        for xrayline, intensity in result.total_intensities_1_per_sr_electron:
+        for xrayline, intensity in result.total_intensities_1_per_sr_electron.items():
             emitted_builder.add_intensity(xrayline, intensity.n, intensity.s)
 
         # Read generated intensities
         result = PenepmaGeneratedIntensityResult()
+        result.read_directory(dirpath)
+
         generated_builder = GeneratedPhotonIntensityResultBuilder(analysis)
 
-        for xrayline, intensity in result.total_intensities_1_per_sr_electron:
+        for xrayline, intensity in result.total_intensities_1_per_sr_electron.items():
             generated_builder.add_intensity(xrayline, intensity.n, intensity.s)
 
         return [emitted_builder.build(), generated_builder.build()]
