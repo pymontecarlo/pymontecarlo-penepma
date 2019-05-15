@@ -72,7 +72,6 @@ class PenepmaWorker(WorkerBase):
                 if not stdout:
                     break
                 logger.debug('Stdout: {}'.format(stdout))
-                token.update(0.2, stdout)
 
                 if stdout.startswith('Number of simulated showers ='):
                     try:
@@ -92,7 +91,9 @@ class PenepmaWorker(WorkerBase):
 
                     progress = max(0.001, progress_time, progress_trajectories, progress_uncertainty)
                     progress = 0.7 * progress + 0.2
-                    token.update(progress, stdout)
+                    token.update(progress, 'Running...')
+                else:
+                    token.update(0.2, stdout)
 
             returncode = await process.wait()
             if returncode != 0:
