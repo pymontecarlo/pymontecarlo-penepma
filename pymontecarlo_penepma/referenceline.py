@@ -103,7 +103,13 @@ class LazyReferenceLine(base.LazyOptionBase):
         return detector_elevations[min(detector_elevations.keys())]
 
     def apply(self, parent_option, options):
-        xrayline = base.apply_lazy(self.xrayline, self, options)
+        # Check that x-ray line exists in material
+        xrayline = self.xrayline
+        if xrayline.atomic_number not in options.sample.atomic_numbers:
+            minimum_energy_eV = xrayline.energy_eV or 100.0
+            xrayline = LazyLowestEnergyXrayLine(minimum_energy_eV)
+
+        xrayline = base.apply_lazy(xrayline, self, options)
         photon_detector = self._find_detector(options)
         relative_uncertainty = base.apply_lazy(self.relative_uncertainty, self, options)
         return ReferenceLine(xrayline, photon_detector, relative_uncertainty)
