@@ -72,6 +72,7 @@ class PenepmaWorker(WorkerBase):
                 if not stdout:
                     break
                 logger.debug('Stdout: {}'.format(stdout))
+                token.update(0.2, stdout)
 
                 if stdout.startswith('Number of simulated showers ='):
                     try:
