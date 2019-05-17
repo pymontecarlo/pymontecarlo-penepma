@@ -36,15 +36,20 @@ class ReferenceLineField(XrayLineField):
         model.beamsChanged.connect(self._on_model_changed)
 
     def _on_model_changed(self):
+        if not self.model.builder.beams or not self.model.builder.samples:
+            self.setXrayLines([])
+            return
+
+        # Find maximum beam energy
+        maximum_energy_eV = max(apply_lazy(beam.energy_eV, beam, None) for beam in self.model.builder.beams)
+
+        # Find all atomic numbers
+        zs = set()
+        for sample in self.model.builder.samples:
+            zs.update(sample.atomic_numbers)
+
         # Extract x-ray lines
-        xraylines = []
-        list_options = self.model.getOptionsList(estimate=True)
-        for options in list_options:
-            if options.beam is None or options.sample is None:
-                continue
-            beam_energy_eV = apply_lazy(options.beam.energy_eV, options.beam, options)
-            zs = options.sample.atomic_numbers
-            xraylines += find_known_xray_lines(zs, minimum_energy_eV=0.0, maximum_energy_eV=beam_energy_eV)
+        xraylines = find_known_xray_lines(zs, minimum_energy_eV=0.0, maximum_energy_eV=maximum_energy_eV)
 
         # Sort by energy
         xraylines.sort(key=attrgetter('energy_eV'))
@@ -400,8 +405,7 @@ class InteractionForcingsField(WidgetFieldBase):
 class PenepmaProgramField(ProgramFieldBase):
 
     def __init__(self, model):
-        default_program=PenepmaProgram(number_trajectories=100) # Set to 100 just to have a termination condition
-        super().__init__(model, default_program=default_program)
+        super().__init__(model)
 
         self.field_xrayline = ReferenceLineField(self.model)
         self.addLabelField(self.field_xrayline)
