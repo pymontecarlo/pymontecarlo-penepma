@@ -105,7 +105,7 @@ class LazyReferenceLine(base.LazyOptionBase):
     def apply(self, parent_option, options):
         # Check that x-ray line exists in material
         xrayline = self.xrayline
-        if xrayline.atomic_number not in options.sample.atomic_numbers:
+        if hasattr(xrayline, 'atomic_number') and xrayline.atomic_number not in options.sample.atomic_numbers:
             minimum_energy_eV = xrayline.energy_eV or 100.0
             xrayline = LazyLowestEnergyXrayLine(minimum_energy_eV)
 
