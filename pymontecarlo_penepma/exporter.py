@@ -47,6 +47,8 @@ def _pairwise(iterable):
     next(b, None)
     return zip(a, b)
 
+_write_materials_lock = asyncio.Lock()
+
 class PenepmaExporter(ExporterBase):
 
     DEFAULT_IN_FILENAME = 'options.in'
@@ -54,8 +56,6 @@ class PenepmaExporter(ExporterBase):
 
     def __init__(self):
         super().__init__()
-
-        self._write_materials_lock = asyncio.Lock()
 
         self.dump_interval_s = 30
         self.random_seeds = (-10, 1)
@@ -108,7 +108,7 @@ class PenepmaExporter(ExporterBase):
                 geometry.write(fileobj, index_lookup)
 
             # Write material files
-            async with self._write_materials_lock:
+            async with _write_materials_lock:
                 await self._write_materials(options, dirpath, erracc, geometry)
 
             # Write in file
