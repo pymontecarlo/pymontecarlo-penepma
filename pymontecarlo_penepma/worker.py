@@ -14,7 +14,7 @@ from pypenelopetools.penepma.results import PenepmaResult
 
 # Local modules.
 from pymontecarlo.options.program.worker import WorkerBase
-from pymontecarlo.util.process import create_startupinfo
+from pymontecarlo.util.process import create_startupinfo, kill_process
 from pymontecarlo.exceptions import WorkerError
 
 # Globals and constants variables.
@@ -65,39 +65,45 @@ class PenepmaWorker(WorkerBase):
 
             process = await asyncio.create_subprocess_exec(*args, **kwargs)
 
-            # Update token
-            while True:
-                stdout = await process.stdout.readline()
-                stdout = stdout.decode('ascii').strip()
-                if not stdout:
-                    break
-                logger.debug('Stdout: {}'.format(stdout))
+            try:
+                # Update token
+                while True:
+                    stdout = await process.stdout.readline()
+                    stdout = stdout.decode('ascii').strip()
+                    if not stdout:
+                        break
+                    logger.debug('Stdout: {}'.format(stdout))
 
-                if stdout.startswith('Number of simulated showers ='):
-                    try:
-                        result.read_directory(outputdir)
-                    except:
-                        logger.exception("Error while reading results")
-                        continue
+                    if stdout.startswith('Number of simulated showers ='):
+                        try:
+                            result.read_directory(outputdir)
+                        except:
+                            logger.exception("Error while reading results")
+                            continue
 
-                    current_time_s = result.simulation_time_s.n
-                    progress_time = current_time_s / target_time_s
+                        current_time_s = result.simulation_time_s.n
+                        progress_time = current_time_s / target_time_s
 
-                    current_trajectories = result.simulated_primary_showers.n
-                    progress_trajectories = current_trajectories / target_trajectories
+                        current_trajectories = result.simulated_primary_showers.n
+                        progress_trajectories = current_trajectories / target_trajectories
 
-                    current_uncertainty = result.reference_line_uncertainty.n
-                    progress_uncertainty = (target_uncertainty - current_uncertainty) / target_uncertainty
+                        current_uncertainty = result.reference_line_uncertainty.n
+                        progress_uncertainty = (target_uncertainty - current_uncertainty) / target_uncertainty
 
-                    progress = max(0.001, progress_time, progress_trajectories, progress_uncertainty)
-                    progress = 0.7 * progress + 0.2
-                    token.update(progress, 'Running...')
-                else:
-                    token.update(0.2, stdout)
+                        progress = max(0.001, progress_time, progress_trajectories, progress_uncertainty)
+                        progress = 0.7 * progress + 0.2
+                        token.update(progress, 'Running...')
+                    else:
+                        token.update(0.2, stdout)
 
-            returncode = await process.wait()
-            if returncode != 0:
-                raise WorkerError('Error running PENEPMA')
+                returncode = await process.wait()
+                if returncode != 0:
+                    raise WorkerError('Error running PENEPMA')
+
+            except asyncio.CancelledError:
+                # Make sure the process is killed before raising CancelledError
+                kill_process(process.pid)
+                raise
 
         # Import
         token.update(0.9, 'Importing results')
