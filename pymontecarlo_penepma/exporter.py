@@ -632,7 +632,7 @@ class PenepmaExporter(ExporterBase):
             index += 1
 
         ## Right substrate
-        right_material = apply_lazy(sample.left_material, sample, options)
+        right_material = apply_lazy(sample.right_material, sample, options)
         penmaterial = self._export_material(right_material, options, erracc, index)
 
         module = Module(penmaterial, 'Right substrate')
