@@ -143,7 +143,7 @@ class PenepmaExporter(ExporterBase):
             if penmaterial is PENELOPE_VACUUM:
                 continue
             coro = self._write_material(penmaterial, options, dirpath, erracc) # pylint: disable=assignment-from-no-return
-            tasks.append(asyncio.ensure_future(coro)) # Use ensure_future instead of create_task to be compatible with asyncqt
+            tasks.append(asyncio.ensure_future(coro)) # Use ensure_future instead of create_task to be compatible with qasync
 
         await asyncio.gather(*tasks)
 

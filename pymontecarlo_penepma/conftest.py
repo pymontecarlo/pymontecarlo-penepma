@@ -24,12 +24,13 @@ from pymontecarlo_penepma.program import PenepmaProgram
 
 # Globals and constants variables.
 
-@pytest.yield_fixture(scope='session')
+
+@pytest.fixture(scope="session")
 def event_loop(request):
     """
     Run all tests using the default event loop and never closes it.
     """
-    if sys.platform == 'win32':
+    if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
     loop = asyncio.new_event_loop()
@@ -37,20 +38,23 @@ def event_loop(request):
     yield loop
     loop.close()
 
+
 @pytest.fixture
 def options():
     program = PenepmaProgram(number_trajectories=100)
     program.exporter.dump_interval_s = 2
     beam = CylindricalBeam(15e3, 10e-9)
     sample = SubstrateSample(Material.pure(29))
-    detector = PhotonDetector('xray', math.radians(40.0))
+    detector = PhotonDetector("xray", math.radians(40.0))
     analyses = [PhotonIntensityAnalysis(detector)]
-    tags = ['basic', 'test']
+    tags = ["basic", "test"]
     return Options(program, beam, sample, analyses, tags)
+
 
 @pytest.fixture
 def testdatadir():
-    return os.path.abspath(os.path.join(os.path.dirname(__file__), 'testdata'))
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), "testdata"))
+
 
 @pytest.fixture
 def settings():
@@ -58,9 +62,11 @@ def settings():
     settings.preferred_xray_notation = XrayNotation.IUPAC
     return settings
 
+
 @pytest.fixture
 def seriesbuilder(settings):
     return SeriesBuilder(settings)
+
 
 @pytest.fixture
 def documentbuilder(settings):
