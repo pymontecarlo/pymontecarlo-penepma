@@ -3,23 +3,29 @@
 # Standard library modules.
 
 # Third party modules.
-from pypenelopetools.penepma.results import \
-    PenepmaEmittedIntensityResult, PenepmaGeneratedIntensityResult
+from pypenelopetools.penepma.results import (
+    PenepmaEmittedIntensityResult,
+    PenepmaGeneratedIntensityResult,
+)
 
 # Local modules.
 from pymontecarlo.options.program.importer import ImporterBase
 from pymontecarlo.options.analysis import PhotonIntensityAnalysis, KRatioAnalysis
-from pymontecarlo.results.photonintensity import \
-    EmittedPhotonIntensityResultBuilder, GeneratedPhotonIntensityResultBuilder
+from pymontecarlo.results.photonintensity import (
+    EmittedPhotonIntensityResultBuilder,
+    GeneratedPhotonIntensityResultBuilder,
+)
 
 # Globals and constants variables.
 
-class PenepmaImporter(ImporterBase):
 
+class PenepmaImporter(ImporterBase):
     def __init__(self):
         super().__init__()
 
-        self.import_analysis_methods[PhotonIntensityAnalysis] = self._import_analysis_photonintensity
+        self.import_analysis_methods[
+            PhotonIntensityAnalysis
+        ] = self._import_analysis_photonintensity
         self.import_analysis_methods[KRatioAnalysis] = self._import_analysis_kratio
 
     async def _import(self, options, dirpath, erracc):

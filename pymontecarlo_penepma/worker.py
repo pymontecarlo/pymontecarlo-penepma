@@ -6,6 +6,7 @@ PENEPMA worker
 import os
 import asyncio
 import logging
+
 logger = logging.getLogger(__name__)
 
 # Third party modules.
@@ -19,28 +20,28 @@ from pymontecarlo.exceptions import WorkerError
 
 # Globals and constants variables.
 
-class PenepmaWorker(WorkerBase):
 
+class PenepmaWorker(WorkerBase):
     async def _run(self, token, simulation, outputdir):
         options = simulation.options
         program = options.program
 
         # Export
-        token.update(0.1, 'Exporting simulation')
+        token.update(0.1, "Exporting simulation")
         await program.exporter.export(options, outputdir)
 
         # Run
-        token.update(0.2, 'Run simulation')
+        token.update(0.2, "Run simulation")
 
         infilepath = os.path.join(outputdir, program.exporter.DEFAULT_IN_FILENAME)
-        with open(infilepath, 'r') as fileobj:
+        with open(infilepath, "r") as fileobj:
             # Read targets
             penepma_input = PenepmaInput()
             penepma_input.read(fileobj)
 
-            target_time_s, = penepma_input.TIME.get()
+            (target_time_s,) = penepma_input.TIME.get()
 
-            target_trajectories, = penepma_input.NSIMSH.get()
+            (target_trajectories,) = penepma_input.NSIMSH.get()
 
             _izs1s200, _idet, target_uncertainty = penepma_input.REFLIN.get()
             if target_uncertainty is None:
@@ -54,14 +55,14 @@ class PenepmaWorker(WorkerBase):
             # Launch simulation
             args = [program.executable]
 
-            logger.debug('Launching %s', ' '.join(args))
+            logger.debug("Launching %s", " ".join(args))
 
             kwargs = {}
-            kwargs['stdin'] = fileobj
-            kwargs['stdout'] = asyncio.subprocess.PIPE
-            kwargs['stderr'] = asyncio.subprocess.DEVNULL
-            kwargs['cwd'] = outputdir
-            kwargs['startupinfo'] = create_startupinfo()
+            kwargs["stdin"] = fileobj
+            kwargs["stdout"] = asyncio.subprocess.PIPE
+            kwargs["stderr"] = asyncio.subprocess.DEVNULL
+            kwargs["cwd"] = outputdir
+            kwargs["startupinfo"] = create_startupinfo()
 
             process = await asyncio.create_subprocess_exec(*args, **kwargs)
 
@@ -69,12 +70,12 @@ class PenepmaWorker(WorkerBase):
                 # Update token
                 while True:
                     stdout = await process.stdout.readline()
-                    stdout = stdout.decode('ascii').strip()
+                    stdout = stdout.decode("ascii").strip()
                     if not stdout:
                         break
-                    logger.debug('Stdout: {}'.format(stdout))
+                    logger.debug("Stdout: {}".format(stdout))
 
-                    if stdout.startswith('Number of simulated showers ='):
+                    if stdout.startswith("Number of simulated showers ="):
                         try:
                             result.read_directory(outputdir)
                         except:
@@ -85,20 +86,29 @@ class PenepmaWorker(WorkerBase):
                         progress_time = current_time_s / target_time_s
 
                         current_trajectories = result.simulated_primary_showers.n
-                        progress_trajectories = current_trajectories / target_trajectories
+                        progress_trajectories = (
+                            current_trajectories / target_trajectories
+                        )
 
                         current_uncertainty = result.reference_line_uncertainty.n
-                        progress_uncertainty = (target_uncertainty - current_uncertainty) / target_uncertainty
+                        progress_uncertainty = (
+                            target_uncertainty - current_uncertainty
+                        ) / target_uncertainty
 
-                        progress = max(0.001, progress_time, progress_trajectories, progress_uncertainty)
+                        progress = max(
+                            0.001,
+                            progress_time,
+                            progress_trajectories,
+                            progress_uncertainty,
+                        )
                         progress = 0.7 * progress + 0.2
-                        token.update(progress, 'Running...')
+                        token.update(progress, "Running...")
                     else:
                         token.update(0.2, stdout)
 
                 returncode = await process.wait()
                 if returncode != 0:
-                    raise WorkerError('Error running PENEPMA')
+                    raise WorkerError("Error running PENEPMA")
 
             except asyncio.CancelledError:
                 # Make sure the process is killed before raising CancelledError
@@ -106,7 +116,7 @@ class PenepmaWorker(WorkerBase):
                 raise
 
         # Import
-        token.update(0.9, 'Importing results')
+        token.update(0.9, "Importing results")
 
         simulation.results += await program.importer.import_(options, outputdir)
 

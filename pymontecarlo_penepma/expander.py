@@ -9,7 +9,7 @@ from pymontecarlo.options.program.expander import ExpanderBase, expand_to_single
 
 # Globals and constants variables.
 
-class PenepmaExpander(ExpanderBase):
 
+class PenepmaExpander(ExpanderBase):
     def expand_analyses(self, analyses):
         return expand_to_single(analyses)

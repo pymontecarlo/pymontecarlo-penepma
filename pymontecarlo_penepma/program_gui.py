@@ -8,7 +8,11 @@ import itertools
 from qtpy import QtCore, QtWidgets
 
 # Local modules.
-from pymontecarlo_gui.widgets.field import FieldBase, MultiValueFieldBase, WidgetFieldBase
+from pymontecarlo_gui.widgets.field import (
+    FieldBase,
+    MultiValueFieldBase,
+    WidgetFieldBase,
+)
 from pymontecarlo_gui.widgets.lineedit import ColoredMultiFloatLineEdit
 from pymontecarlo_gui.widgets.xrayline import XrayLineField
 from pymontecarlo_gui.options.program.base import ProgramFieldBase
@@ -23,8 +27,8 @@ from pymontecarlo_penepma.simulationparameters import LazySimulationParameters
 
 # Globals and constants variables.
 
-class ReferenceLineField(XrayLineField):
 
+class ReferenceLineField(XrayLineField):
     def __init__(self, model):
         super().__init__(model.settings)
 
@@ -41,7 +45,9 @@ class ReferenceLineField(XrayLineField):
             return
 
         # Find maximum beam energy
-        maximum_energy_eV = max(apply_lazy(beam.energy_eV, beam, None) for beam in self.model.builder.beams)
+        maximum_energy_eV = max(
+            apply_lazy(beam.energy_eV, beam, None) for beam in self.model.builder.beams
+        )
 
         # Find all atomic numbers
         zs = set()
@@ -49,26 +55,28 @@ class ReferenceLineField(XrayLineField):
             zs.update(sample.atomic_numbers)
 
         # Extract x-ray lines
-        xraylines = find_known_xray_lines(zs, minimum_energy_eV=0.0, maximum_energy_eV=maximum_energy_eV)
+        xraylines = find_known_xray_lines(
+            zs, minimum_energy_eV=0.0, maximum_energy_eV=maximum_energy_eV
+        )
 
         # Sort by energy
-        xraylines.sort(key=attrgetter('energy_eV'))
+        xraylines.sort(key=attrgetter("energy_eV"))
 
         self.setXrayLines(xraylines)
 
     def title(self):
-        return 'Lowest energy\nX-ray line of interest'
+        return "Lowest energy\nX-ray line of interest"
 
     def description(self):
-        return 'Simulation is adjusted to only consider X-ray lines with an energy greater than the select X-ray line'
+        return "Simulation is adjusted to only consider X-ray lines with an energy greater than the select X-ray line"
+
 
 class TerminationFieldBase(MultiValueFieldBase):
-
     def __init__(self):
         super().__init__()
 
         # Widgets
-        self._suffix = QtWidgets.QCheckBox('Use as termination')
+        self._suffix = QtWidgets.QCheckBox("Use as termination")
         self._suffix.setChecked(False)
 
         # Signals
@@ -88,23 +96,23 @@ class TerminationFieldBase(MultiValueFieldBase):
 
     def setEnabled(self, enabled):
         super().setEnabled(enabled)
-        self.widget().setEnabled(self._suffix.isChecked()) # Opposite to normal use
+        self.widget().setEnabled(self._suffix.isChecked())  # Opposite to normal use
+
 
 class SimulationTimeTerminationField(TerminationFieldBase):
-
     def __init__(self):
         super().__init__()
 
         # Widgets
         self._widget = ColoredMultiFloatLineEdit()
-        self._widget.setRange(1, float('inf'), 0)
+        self._widget.setRange(1, float("inf"), 0)
         self._widget.setEnabled(False)
 
         # Signals
         self._widget.valuesChanged.connect(self.fieldChanged)
 
     def title(self):
-        return 'Simulation time [s]'
+        return "Simulation time [s]"
 
     def widget(self):
         return self._widget
@@ -119,21 +127,21 @@ class SimulationTimeTerminationField(TerminationFieldBase):
         self._suffix.setChecked(True)
         self._widget.setValues(simulation_times)
 
-class NumberTrajectoriesTerminationField(TerminationFieldBase):
 
+class NumberTrajectoriesTerminationField(TerminationFieldBase):
     def __init__(self):
         super().__init__()
 
         # Widgets
         self._widget = ColoredMultiFloatLineEdit()
-        self._widget.setRange(1, float('inf'), 0)
+        self._widget.setRange(1, float("inf"), 0)
         self._widget.setEnabled(False)
 
         # Signals
         self._widget.valuesChanged.connect(self.fieldChanged)
 
     def title(self):
-        return 'Number of trajectories'
+        return "Number of trajectories"
 
     def widget(self):
         return self._widget
@@ -148,8 +156,8 @@ class NumberTrajectoriesTerminationField(TerminationFieldBase):
         self._suffix.setChecked(True)
         self._widget.setValues(numbers_trajectories)
 
-class RelativeUncertaintyTerminationField(TerminationFieldBase):
 
+class RelativeUncertaintyTerminationField(TerminationFieldBase):
     def __init__(self):
         super().__init__()
 
@@ -165,10 +173,10 @@ class RelativeUncertaintyTerminationField(TerminationFieldBase):
         self._widget.valuesChanged.connect(self.fieldChanged)
 
     def title(self):
-        return 'Relative uncertainty (%)'
+        return "Relative uncertainty (%)"
 
     def description(self):
-        return 'Relative statistical uncertainty (3*sigma) of the intensity of the x-ray line'
+        return "Relative statistical uncertainty (3*sigma) of the intensity of the x-ray line"
 
     def widget(self):
         return self._widget
@@ -183,8 +191,8 @@ class RelativeUncertaintyTerminationField(TerminationFieldBase):
         self._suffix.setChecked(True)
         self._widget.setValues([value * 100.0 for value in relative_uncertainties])
 
-class TerminationField(WidgetFieldBase):
 
+class TerminationField(WidgetFieldBase):
     def __init__(self):
         super().__init__()
 
@@ -198,11 +206,13 @@ class TerminationField(WidgetFieldBase):
         self.addLabelField(self.field_relative_uncertainty)
 
     def title(self):
-        return 'Termination conditions'
+        return "Termination conditions"
 
     def isValid(self):
         # At least one termination condition should be selected
-        has_termination = any(field.suffixWidget().isChecked() for field in self.fields())
+        has_termination = any(
+            field.suffixWidget().isChecked() for field in self.fields()
+        )
         return super().isValid() and has_termination
 
     def simulationTimesSecond(self):
@@ -214,8 +224,8 @@ class TerminationField(WidgetFieldBase):
     def relativeUncertainties(self):
         return self.field_relative_uncertainty.relativeUncertainties()
 
-class CField(MultiValueFieldBase):
 
+class CField(MultiValueFieldBase):
     def __init__(self, title):
         self._title = title
         super().__init__()
@@ -232,7 +242,7 @@ class CField(MultiValueFieldBase):
         return self._title
 
     def description(self):
-        return 'Elastic scattering parameter'
+        return "Elastic scattering parameter"
 
     def widget(self):
         return self._widget
@@ -243,22 +253,22 @@ class CField(MultiValueFieldBase):
     def values(self):
         return self._widget.values()
 
-class SimulationParametersField(WidgetFieldBase):
 
+class SimulationParametersField(WidgetFieldBase):
     def __init__(self):
         super().__init__()
 
-        self.field_c1 = CField('C1')
+        self.field_c1 = CField("C1")
         self.addLabelField(self.field_c1)
 
-        self.field_c2 = CField('C2')
+        self.field_c2 = CField("C2")
         self.addLabelField(self.field_c2)
 
     def title(self):
-        return 'Simulation parameters'
+        return "Simulation parameters"
 
     def description(self):
-        return 'Applies to all materials'
+        return "Applies to all materials"
 
     def c1s(self):
         return self.field_c1.values()
@@ -266,15 +276,15 @@ class SimulationParametersField(WidgetFieldBase):
     def c2s(self):
         return self.field_c2.values()
 
-class XraySplittingFactorField(MultiValueFieldBase):
 
+class XraySplittingFactorField(MultiValueFieldBase):
     def __init__(self, title):
         self._title = title
         super().__init__()
 
         # Widgets
         self._widget = ColoredMultiFloatLineEdit()
-        self._widget.setRange(1, float('inf'), 0)
+        self._widget.setRange(1, float("inf"), 0)
         self._widget.setValues([2])
 
         # Signals
@@ -289,8 +299,8 @@ class XraySplittingFactorField(MultiValueFieldBase):
     def splittingFactors(self):
         return self._widget.values()
 
-class InteractionForcing:
 
+class InteractionForcing:
     def __init__(self, particle, collision, forcers, weight_low, weight_high):
         self.particle = particle
         self.collision = collision
@@ -301,8 +311,8 @@ class InteractionForcing:
     def __eq__(self, other):
         return self.particle == other.particle and self.collision == other.collision
 
-class InteractionForcingsModel(QtCore.QAbstractTableModel):
 
+class InteractionForcingsModel(QtCore.QAbstractTableModel):
     def __init__(self):
         super().__init__()
         self._interactionforcings = []
@@ -327,9 +337,13 @@ class InteractionForcingsModel(QtCore.QAbstractTableModel):
             elif column == 1:
                 return str(interactionforcing.collision)
             elif column == 2:
-                return ', '.join('{:0f}'.format(forcer) for forcer in interactionforcing.forcers)
+                return ", ".join(
+                    "{:0f}".format(forcer) for forcer in interactionforcing.forcers
+                )
             elif column == 3:
-                return '{:.4f}-{:.4f}'.format(interactionforcing.weight_low, interactionforcing.weight_high)
+                return "{:.4f}-{:.4f}".format(
+                    interactionforcing.weight_low, interactionforcing.weight_high
+                )
 
         elif role == QtCore.Qt.TextAlignmentRole:
             return QtCore.Qt.AlignCenter
@@ -340,13 +354,13 @@ class InteractionForcingsModel(QtCore.QAbstractTableModel):
 
         if orientation == QtCore.Qt.Horizontal:
             if section == 0:
-                return 'Particle'
+                return "Particle"
             elif section == 1:
-                return 'Collision'
+                return "Collision"
             elif section == 2:
-                return 'Forcer'
+                return "Forcer"
             elif section == 3:
-                return 'Weight'
+                return "Weight"
 
     def flags(self, index):
         if not index.isValid():
@@ -358,8 +372,11 @@ class InteractionForcingsModel(QtCore.QAbstractTableModel):
 
     def addInteractionForcing(self, interactionforcing):
         if interactionforcing in self._interactionforcings:
-            raise ValueError('Interaction forcing for ({}, {}) already exists'
-                             .format(interactionforcing.particle, interactionforcing.collision))
+            raise ValueError(
+                "Interaction forcing for ({}, {}) already exists".format(
+                    interactionforcing.particle, interactionforcing.collision
+                )
+            )
 
         self._interactionforcings.append(interactionforcing)
         self.modelReset.emit()
@@ -379,22 +396,26 @@ class InteractionForcingsModel(QtCore.QAbstractTableModel):
     def hasElements(self):
         return bool(self._composition)
 
-class InteractionForcingsField(WidgetFieldBase):
 
+class InteractionForcingsField(WidgetFieldBase):
     def __init__(self):
         super().__init__()
 
-        self.bremsstrahlung_xray_splitting_factor_field = XraySplittingFactorField('Bremsstrahlung X-ray splitting factor')
+        self.bremsstrahlung_xray_splitting_factor_field = XraySplittingFactorField(
+            "Bremsstrahlung X-ray splitting factor"
+        )
         self.addLabelField(self.bremsstrahlung_xray_splitting_factor_field)
 
-        self.characteristic_xray_splitting_factor_field = XraySplittingFactorField('Characteristic X-ray splitting factor')
+        self.characteristic_xray_splitting_factor_field = XraySplittingFactorField(
+            "Characteristic X-ray splitting factor"
+        )
         self.addLabelField(self.characteristic_xray_splitting_factor_field)
 
     def title(self):
-        return 'Interaction forcings'
+        return "Interaction forcings"
 
     def description(self):
-        return 'Applies to all bodies'
+        return "Applies to all bodies"
 
     def bremsstrahlungXraySplittingFactors(self):
         return self.bremsstrahlung_xray_splitting_factor_field.splittingFactors()
@@ -402,8 +423,8 @@ class InteractionForcingsField(WidgetFieldBase):
     def characteristicXraySplittingFactors(self):
         return self.characteristic_xray_splitting_factor_field.splittingFactors()
 
-class PenepmaProgramField(ProgramFieldBase):
 
+class PenepmaProgramField(ProgramFieldBase):
     def __init__(self, model):
         super().__init__(model)
 
@@ -420,10 +441,10 @@ class PenepmaProgramField(ProgramFieldBase):
         self.addGroupField(self.field_interaction_forcings)
 
     def title(self):
-        return 'PENEPMA'
+        return "PENEPMA"
 
     def description(self):
-        return 'Version 2016\nCopyright (c) 2001-2016 Universitat de Barcelona\n(Xavier Llovet and Francesc Salvat)'
+        return "Version 2016\nCopyright (c) 2001-2016 Universitat de Barcelona\n(Xavier Llovet and Francesc Salvat)"
 
     def programs(self):
         builder = PenepmaProgramBuilder()
