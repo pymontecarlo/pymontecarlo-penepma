@@ -12,12 +12,15 @@ from pymontecarlo.options.xrayline import LazyLowestEnergyXrayLine
 
 # Globals and constants variables.
 
+
 class SimulationParameters(base.OptionBase):
 
     C1_C2_TOLERANCE = 1e-3
-    ENERGY_TOLERANCE_eV = 1e-2 # 0.01 eV
+    ENERGY_TOLERANCE_eV = 1e-2  # 0.01 eV
 
-    def __init__(self, eabs_electron_eV, eabs_photon_eV, eabs_positron_eV, c1, c2, wcc_eV, wcr_eV):
+    def __init__(
+        self, eabs_electron_eV, eabs_photon_eV, eabs_positron_eV, c1, c2, wcc_eV, wcr_eV
+    ):
         super().__init__()
 
         self.eabs_electron_eV = eabs_electron_eV
@@ -29,24 +32,42 @@ class SimulationParameters(base.OptionBase):
         self.wcr_eV = wcr_eV
 
     def __eq__(self, other):
-        return super().__eq__(other) and \
-            base.isclose(self.eabs_electron_eV, other.eabs_electron_eV, abs_tol=self.ENERGY_TOLERANCE_eV) and \
-            base.isclose(self.eabs_photon_eV, other.eabs_photon_eV, abs_tol=self.ENERGY_TOLERANCE_eV) and \
-            base.isclose(self.eabs_positron_eV, other.eabs_positron_eV, abs_tol=self.ENERGY_TOLERANCE_eV) and \
-            base.isclose(self.c1, other.c1, abs_tol=self.C1_C2_TOLERANCE) and \
-            base.isclose(self.c2, other.c2, abs_tol=self.C1_C2_TOLERANCE) and \
-            base.isclose(self.wcc_eV, other.wcc_eV, abs_tol=self.ENERGY_TOLERANCE_eV) and \
-            base.isclose(self.wcr_eV, other.wcr_eV, abs_tol=self.ENERGY_TOLERANCE_eV)
+        return (
+            super().__eq__(other)
+            and base.isclose(
+                self.eabs_electron_eV,
+                other.eabs_electron_eV,
+                abs_tol=self.ENERGY_TOLERANCE_eV,
+            )
+            and base.isclose(
+                self.eabs_photon_eV,
+                other.eabs_photon_eV,
+                abs_tol=self.ENERGY_TOLERANCE_eV,
+            )
+            and base.isclose(
+                self.eabs_positron_eV,
+                other.eabs_positron_eV,
+                abs_tol=self.ENERGY_TOLERANCE_eV,
+            )
+            and base.isclose(self.c1, other.c1, abs_tol=self.C1_C2_TOLERANCE)
+            and base.isclose(self.c2, other.c2, abs_tol=self.C1_C2_TOLERANCE)
+            and base.isclose(
+                self.wcc_eV, other.wcc_eV, abs_tol=self.ENERGY_TOLERANCE_eV
+            )
+            and base.isclose(
+                self.wcr_eV, other.wcr_eV, abs_tol=self.ENERGY_TOLERANCE_eV
+            )
+        )
 
-#region HDF5
+    # region HDF5
 
-    ATTR_EABS_ELECTRON = 'absorption energy electron (eV)'
-    ATTR_EABS_PHOTON = 'absorption energy photon (eV)'
-    ATTR_EABS_POSITRON = 'absorption energy positron (eV)'
-    ATTR_C1 = 'c1'
-    ATTR_C2 = 'c2'
-    ATTR_WCC = 'wcc (eV)'
-    ATTR_WCR = 'wcr (eV)'
+    ATTR_EABS_ELECTRON = "absorption energy electron (eV)"
+    ATTR_EABS_PHOTON = "absorption energy photon (eV)"
+    ATTR_EABS_POSITRON = "absorption energy positron (eV)"
+    ATTR_C1 = "c1"
+    ATTR_C2 = "c2"
+    ATTR_WCC = "wcc (eV)"
+    ATTR_WCR = "wcr (eV)"
 
     @classmethod
     def parse_hdf5(cls, group):
@@ -57,7 +78,9 @@ class SimulationParameters(base.OptionBase):
         c2 = cls._parse_hdf5(group, cls.ATTR_C2, float)
         wcc_eV = cls._parse_hdf5(group, cls.ATTR_WCC, float)
         wcr_eV = cls._parse_hdf5(group, cls.ATTR_WCR, float)
-        return cls(eabs_electron_eV, eabs_photon_eV, eabs_positron_eV, c1, c2, wcc_eV, wcr_eV)
+        return cls(
+            eabs_electron_eV, eabs_photon_eV, eabs_positron_eV, c1, c2, wcc_eV, wcr_eV
+        )
 
     def convert_hdf5(self, group):
         super().convert_hdf5(group)
@@ -69,40 +92,77 @@ class SimulationParameters(base.OptionBase):
         self._convert_hdf5(group, self.ATTR_WCC, self.wcc_eV)
         self._convert_hdf5(group, self.ATTR_WCR, self.wcr_eV)
 
-#endregion
+    # endregion
 
-#region Series
+    # region Series
 
     def convert_series(self, builder):
         super().convert_series(builder)
 
-        builder.add_column('absorption energy electron', 'eabs electron', self.eabs_electron_eV, 'eV', self.ENERGY_TOLERANCE_eV)
-        builder.add_column('absorption energy photon', 'eabs photon', self.eabs_photon_eV, 'eV', self.ENERGY_TOLERANCE_eV)
-        builder.add_column('absorption energy positron', 'eabs positron', self.eabs_positron_eV, 'eV', self.ENERGY_TOLERANCE_eV)
-        builder.add_column('c1', 'c1', self.c1, None, self.C1_C2_TOLERANCE)
-        builder.add_column('c2', 'c2', self.c2, None, self.C1_C2_TOLERANCE)
-        builder.add_column('wcc', 'wcc', self.wcc_eV, 'eV', self.ENERGY_TOLERANCE_eV)
-        builder.add_column('wcr', 'wcr', self.wcr_eV, 'eV', self.ENERGY_TOLERANCE_eV)
+        builder.add_column(
+            "absorption energy electron",
+            "eabs electron",
+            self.eabs_electron_eV,
+            "eV",
+            self.ENERGY_TOLERANCE_eV,
+        )
+        builder.add_column(
+            "absorption energy photon",
+            "eabs photon",
+            self.eabs_photon_eV,
+            "eV",
+            self.ENERGY_TOLERANCE_eV,
+        )
+        builder.add_column(
+            "absorption energy positron",
+            "eabs positron",
+            self.eabs_positron_eV,
+            "eV",
+            self.ENERGY_TOLERANCE_eV,
+        )
+        builder.add_column("c1", "c1", self.c1, None, self.C1_C2_TOLERANCE)
+        builder.add_column("c2", "c2", self.c2, None, self.C1_C2_TOLERANCE)
+        builder.add_column("wcc", "wcc", self.wcc_eV, "eV", self.ENERGY_TOLERANCE_eV)
+        builder.add_column("wcr", "wcr", self.wcr_eV, "eV", self.ENERGY_TOLERANCE_eV)
 
-#endregion
+    # endregion
 
-#region Document
+    # region Document
 
-    DESCRIPTION_SIMULATION_PARAMETERS = 'simulation parameters'
+    DESCRIPTION_SIMULATION_PARAMETERS = "simulation parameters"
 
     def convert_document(self, builder):
         super().convert_document(builder)
 
-        description = builder.require_description(self.DESCRIPTION_SIMULATION_PARAMETERS)
-        description.add_item('Absorption energy of electrons', self.eabs_electron_eV, 'eV', self.ENERGY_TOLERANCE_eV)
-        description.add_item('Absorption energy of photons', self.eabs_photon_eV, 'eV', self.ENERGY_TOLERANCE_eV)
-        description.add_item('Absorption energy of positrons', self.eabs_positron_eV, 'eV', self.ENERGY_TOLERANCE_eV)
-        description.add_item('C1', self.c1, None, self.C1_C2_TOLERANCE)
-        description.add_item('C2', self.c2, None, self.C1_C2_TOLERANCE)
-        description.add_item('WCC', self.wcc_eV, 'eV', self.ENERGY_TOLERANCE_eV)
-        description.add_item('WCR', self.wcr_eV, 'eV', self.ENERGY_TOLERANCE_eV)
+        description = builder.require_description(
+            self.DESCRIPTION_SIMULATION_PARAMETERS
+        )
+        description.add_item(
+            "Absorption energy of electrons",
+            self.eabs_electron_eV,
+            "eV",
+            self.ENERGY_TOLERANCE_eV,
+        )
+        description.add_item(
+            "Absorption energy of photons",
+            self.eabs_photon_eV,
+            "eV",
+            self.ENERGY_TOLERANCE_eV,
+        )
+        description.add_item(
+            "Absorption energy of positrons",
+            self.eabs_positron_eV,
+            "eV",
+            self.ENERGY_TOLERANCE_eV,
+        )
+        description.add_item("C1", self.c1, None, self.C1_C2_TOLERANCE)
+        description.add_item("C2", self.c2, None, self.C1_C2_TOLERANCE)
+        description.add_item("WCC", self.wcc_eV, "eV", self.ENERGY_TOLERANCE_eV)
+        description.add_item("WCR", self.wcr_eV, "eV", self.ENERGY_TOLERANCE_eV)
 
-#endregion
+
+# endregion
+
 
 class LazySimulationParameters(base.LazyOptionBase):
 
@@ -118,10 +178,12 @@ class LazySimulationParameters(base.LazyOptionBase):
         self.c2 = c2
 
     def __eq__(self, other):
-        return super().__eq__(other) and \
-            base.isclose(self.xrayline, other.xrayline) and \
-            base.isclose(self.c1, other.c1, abs_tol=self.C1_C2_TOLERANCE) and \
-            base.isclose(self.c2, other.c2, abs_tol=self.C1_C2_TOLERANCE)
+        return (
+            super().__eq__(other)
+            and base.isclose(self.xrayline, other.xrayline)
+            and base.isclose(self.c1, other.c1, abs_tol=self.C1_C2_TOLERANCE)
+            and base.isclose(self.c2, other.c2, abs_tol=self.C1_C2_TOLERANCE)
+        )
 
     def apply(self, parent_option, options):
         xrayline = base.apply_lazy(self.xrayline, self, options)
@@ -143,17 +205,21 @@ class LazySimulationParameters(base.LazyOptionBase):
         else:
             eabs_electron_eV = eabs_photon_eV = eabs_positron_eV = beam_energy_eV
 
-        return SimulationParameters(eabs_electron_eV=eabs_electron_eV,
-                                    eabs_photon_eV=eabs_photon_eV,
-                                    eabs_positron_eV=eabs_positron_eV,
-                                    c1=c1, c2=c2,
-                                    wcc_eV=xrayline_energy_eV, wcr_eV=xrayline_energy_eV)
+        return SimulationParameters(
+            eabs_electron_eV=eabs_electron_eV,
+            eabs_photon_eV=eabs_photon_eV,
+            eabs_positron_eV=eabs_positron_eV,
+            c1=c1,
+            c2=c2,
+            wcc_eV=xrayline_energy_eV,
+            wcr_eV=xrayline_energy_eV,
+        )
 
-#region HDF5
+    # region HDF5
 
-    ATTR_XRAYLINE = 'xray line'
-    ATTR_C1 = 'c1'
-    ATTR_C2 = 'c2'
+    ATTR_XRAYLINE = "xray line"
+    ATTR_C1 = "c1"
+    ATTR_C2 = "c2"
 
     @classmethod
     def parse_hdf5(cls, group):
@@ -168,23 +234,26 @@ class LazySimulationParameters(base.LazyOptionBase):
         self._convert_hdf5(group, self.ATTR_C1, self.c1)
         self._convert_hdf5(group, self.ATTR_C2, self.c2)
 
-#endregion
+    # endregion
 
-#region Series
+    # region Series
 
     def convert_series(self, builder):
         super().convert_series(builder)
 
-#endregion
+    # endregion
 
-#region Document
+    # region Document
 
     def convert_document(self, builder):
         super().convert_document(builder)
 
-        description = builder.require_description(SimulationParameters.DESCRIPTION_SIMULATION_PARAMETERS)
-        description.add_item('Lowest energy X-ray line', self.xrayline)
-        description.add_item('C1', self.c1, None, self.C1_C2_TOLERANCE)
-        description.add_item('C2', self.c2, None, self.C1_C2_TOLERANCE)
+        description = builder.require_description(
+            SimulationParameters.DESCRIPTION_SIMULATION_PARAMETERS
+        )
+        description.add_item("Lowest energy X-ray line", self.xrayline)
+        description.add_item("C1", self.c1, None, self.C1_C2_TOLERANCE)
+        description.add_item("C2", self.c2, None, self.C1_C2_TOLERANCE)
 
-#endregion
+
+# endregion

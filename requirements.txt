@@ -1,5 +1,5 @@
+h5py
+numpy
 pymontecarlo
 pypenelopetools
 pyxray
-numpy
-h5py

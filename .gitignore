@@ -1,11 +1,4 @@
-pymontecarlo_penepma/penepma/**/*.f
-pymontecarlo_penepma/penepma/**/*.pdf
-pymontecarlo_penepma/penepma/penelope/doc
-pymontecarlo_penepma/penepma/penelope/fsource
-pymontecarlo_penepma/penepma/penelope/mains
-pymontecarlo_penepma/penepma/penelope/other
-pymontecarlo_penepma/penepma/penepma/examples
-
+pymontecarlo_penepma/penepma/pendbase/*.mat
 
 #### joe made this: https://goel.io/joe
 
