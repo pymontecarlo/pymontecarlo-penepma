@@ -95,7 +95,7 @@ class InteractionForcings(base.OptionBase):
             bremsstrahlung_xray_splitting_factor, characteristic_xray_splitting_factor
         )
 
-        particles = group[cls.DATASET_PARTICLE]
+        particles = group[cls.DATASET_PARTICLE].asstr()
         collisions = group[cls.DATASET_COLLISION]
         forcers = group[cls.DATASET_FORCER]
         weights_low = group[cls.DATASET_WEIGHT_LOW]
@@ -125,21 +125,19 @@ class InteractionForcings(base.OptionBase):
         )
 
         shape = (len(self),)
-        dtype = h5py.special_dtype(vlen=str)
-        dataset_particle = group.create_dataset(self.DATASET_PARTICLE, shape, dtype)
 
-        dtype = np.int
-        dataset_collision = group.create_dataset(self.DATASET_COLLISION, shape, dtype)
-
-        dtype = np.float
-        dataset_forcer = group.create_dataset(self.DATASET_FORCER, shape, dtype)
-
-        dtype = np.float
-        dataset_weight_low = group.create_dataset(self.DATASET_WEIGHT_LOW, shape, dtype)
-
-        dtype = np.float
+        dataset_particle = group.create_dataset(
+            self.DATASET_PARTICLE, shape, dtype=h5py.special_dtype(vlen=str)
+        )
+        dataset_collision = group.create_dataset(
+            self.DATASET_COLLISION, shape, dtype=int
+        )
+        dataset_forcer = group.create_dataset(self.DATASET_FORCER, shape, dtype=float)
+        dataset_weight_low = group.create_dataset(
+            self.DATASET_WEIGHT_LOW, shape, dtype=float
+        )
         dataset_weight_high = group.create_dataset(
-            self.DATASET_WEIGHT_HIGH, shape, dtype
+            self.DATASET_WEIGHT_HIGH, shape, dtype=float
         )
 
         for i, (particle, collision, forcer, weight_low, weight_high) in enumerate(
