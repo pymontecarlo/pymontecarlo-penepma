@@ -1,4 +1,4 @@
 # pyMonteCarlo-penepma
 
-Graphical user interface for **pyMonteCarlo**.
+Interface for PENEPMA, a program of the PENELOPE Monte Carlo.
 See https://github.com/pymontecarlo/pymontecarlo for more information.
